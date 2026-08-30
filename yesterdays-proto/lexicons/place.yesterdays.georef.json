@@ -1,0 +1,53 @@
+{
+  "lexicon": 1,
+  "id": "place.yesterdays.georef",
+  "description": "A single contributor's guess at where a historical photo was taken. Placeholder NSID — replace 'place.yesterdays' with a domain you control before writing to production.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["subject", "location", "createdAt"],
+        "properties": {
+          "subject": { "type": "ref", "ref": "#subject" },
+          "location": { "type": "union", "refs": ["#point", "#circle"] },
+          "confidence": { "type": "string", "knownValues": ["sure", "guess"] },
+          "note": { "type": "string", "maxGraphemes": 300, "maxLength": 3000 },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    },
+    "subject": {
+      "type": "object",
+      "description": "Which photo, by stable external archive id. No central catalog.",
+      "required": ["archive", "itemId"],
+      "properties": {
+        "archive": { "type": "string", "maxLength": 128, "description": "Registry key for the source archive, e.g. 'loc', 'lva', 'valentine', or 'sample'." },
+        "itemId": { "type": "string", "maxLength": 512, "description": "Stable identifier for the item WITHIN that archive." },
+        "iiifManifest": { "type": "string", "format": "uri" },
+        "sourceUrl": { "type": "string", "format": "uri" }
+      }
+    },
+    "point": {
+      "type": "object",
+      "description": "A sharp, high-precision vote: it was HERE.",
+      "required": ["lat", "lng"],
+      "properties": {
+        "lat": { "type": "string", "description": "Decimal degrees WGS84 as a string (lexicon has no float type)." },
+        "lng": { "type": "string", "description": "Decimal degrees WGS84 as a string." },
+        "bearingDeg": { "type": "integer", "minimum": 0, "maximum": 359, "description": "Optional camera facing, degrees clockwise from true north." }
+      }
+    },
+    "circle": {
+      "type": "object",
+      "description": "A soft constraint: somewhere around here.",
+      "required": ["lat", "lng", "radiusMeters"],
+      "properties": {
+        "lat": { "type": "string", "description": "Center latitude, decimal degrees WGS84 as a string." },
+        "lng": { "type": "string", "description": "Center longitude, decimal degrees WGS84 as a string." },
+        "radiusMeters": { "type": "integer", "minimum": 1, "maximum": 50000 }
+      }
+    }
+  }
+}

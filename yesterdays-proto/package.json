@@ -1,0 +1,26 @@
+{
+  "name": "yesterdays-proto",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Walking-skeleton prototype: user-owned georeferencing on atproto (point-only spike).",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "seed": "tsx --env-file=.env scripts/seed-guess.ts"
+  },
+  "dependencies": {
+    "@atproto/api": "^0.13.35",
+    "@atproto/identity": "^0.4.3",
+    "@neondatabase/serverless": "^0.10.4",
+    "maplibre-gl": "^4.7.1"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^2.8.2",
+    "@types/node": "^22.9.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}

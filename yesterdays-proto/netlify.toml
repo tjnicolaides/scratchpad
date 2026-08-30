@@ -1,0 +1,19 @@
+# Netlify config for the Yesterdays prototype.
+# The SPA is a static Vite build; the AppView is Netlify Functions;
+# the poller is a scheduled function (schedule declared in the function file).
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# `netlify dev` runs Vite + the functions together on one origin,
+# so the SPA can call /.netlify/functions/* with no CORS.
+[dev]
+  framework = "#custom"
+  command = "npm run dev"
+  targetPort = 5173
+  port = 8888
