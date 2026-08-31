@@ -21,7 +21,6 @@ click map → write georef record to PDS → poller indexes it → consensus API
 | `netlify/functions/poll.ts` | Manual ingest trigger (dev convenience) |
 | `netlify/functions/poll-background.ts` | Scheduled ingest, every 2 min |
 | `lib/` | Shared: consensus algorithm, poller, DB client, geo math |
-| `lexicons/` | Draft lexicon schemas (`place.yesterdays.*`) |
 | `db/schema.sql` | The one table |
 | `scripts/seed-guess.ts` | Writes sample guesses so the map isn't empty |
 
@@ -97,6 +96,11 @@ The scheduled poller runs automatically once deployed.
   (one small always-on box) when you want to discover strangers — Phase 2.
 - **Placeholder NSID.** `place.yesterdays.*` must become a domain you control
   before writing to production PDSes.
+
+The lexicon spec (schema JSON + typed record shapes + NSID constants) is the
+shared contract, kept in its own package: `../packages/lexicons`
+(`@scratchpad/lexicons`). This prototype currently inlines the collection
+strings; point it at the package when you wire real workspace deps.
 
 See `../yesterdays-atproto.html` for the full design, consensus rationale, phased
 plan, and open risks.
