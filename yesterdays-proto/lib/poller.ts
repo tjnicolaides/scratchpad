@@ -1,4 +1,5 @@
 import { IdResolver } from "@atproto/identity";
+import { NSID, LOCATION_TYPE } from "@scratchpad/lexicons";
 import { sql } from "./db";
 
 // The AppView's ingest side. Walk a seed list of handles, resolve each to its
@@ -6,7 +7,7 @@ import { sql } from "./db";
 // so re-running is safe. This is the "poll known repos" model from the design —
 // swap for a Jetstream subscription once you want to discover strangers.
 
-const COLLECTION = "place.yesterdays.georef";
+const COLLECTION = NSID.georef;
 
 export interface PollSummary {
   seeds: string[];
@@ -75,7 +76,7 @@ async function upsert(did: string, rec: RawRecord): Promise<boolean> {
   const v = rec.value ?? {};
   const loc = (v.location ?? {}) as Record<string, any>;
   const subj = (v.subject ?? {}) as Record<string, any>;
-  const isCircle = String(loc.$type ?? "").endsWith("#circle");
+  const isCircle = loc.$type === LOCATION_TYPE.circle;
   const lat = Number.parseFloat(loc.lat);
   const lng = Number.parseFloat(loc.lng);
 

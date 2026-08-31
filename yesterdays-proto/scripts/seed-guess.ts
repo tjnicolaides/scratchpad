@@ -1,4 +1,5 @@
 import { AtpAgent } from "@atproto/api";
+import { NSID, LOCATION_TYPE, type GeorefRecord } from "@scratchpad/lexicons";
 
 // Writes a handful of sample guesses so the map shows something without manual
 // clicking: a tight cluster of 3 points, one outlier, and one area circle for
@@ -23,10 +24,10 @@ const points = [
   { lat: 37.545, lng: -77.43 }, // outlier
 ];
 
-async function write(record: Record<string, unknown>) {
+async function write(record: GeorefRecord) {
   const res = await agent.com.atproto.repo.createRecord({
     repo: agent.session!.did,
-    collection: "place.yesterdays.georef",
+    collection: NSID.georef,
     record,
   });
   console.log("wrote", res.data.uri);
@@ -34,18 +35,18 @@ async function write(record: Record<string, unknown>) {
 
 for (const p of points) {
   await write({
-    $type: "place.yesterdays.georef",
+    $type: NSID.georef,
     subject: { archive, itemId },
-    location: { $type: "place.yesterdays.georef#point", lat: String(p.lat), lng: String(p.lng) },
+    location: { $type: LOCATION_TYPE.point, lat: String(p.lat), lng: String(p.lng) },
     createdAt: new Date().toISOString(),
   });
 }
 
 await write({
-  $type: "place.yesterdays.georef",
+  $type: NSID.georef,
   subject: { archive, itemId },
   location: {
-    $type: "place.yesterdays.georef#circle",
+    $type: LOCATION_TYPE.circle,
     lat: "37.5408",
     lng: "-77.4361",
     radiusMeters: 200,

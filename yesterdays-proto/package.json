@@ -5,15 +5,20 @@
   "type": "module",
   "description": "Walking-skeleton prototype: user-owned georeferencing on atproto (point-only spike).",
   "scripts": {
+    "build:lexicons": "tsc -p ../packages/lexicons/tsconfig.lib.json",
+    "predev": "npm run build:lexicons",
     "dev": "vite",
+    "prebuild": "npm run build:lexicons",
     "build": "vite build",
     "preview": "vite preview",
+    "preseed": "npm run build:lexicons",
     "seed": "tsx --env-file=.env scripts/seed-guess.ts"
   },
   "dependencies": {
     "@atproto/api": "^0.13.35",
     "@atproto/identity": "^0.4.3",
     "@neondatabase/serverless": "^0.10.4",
+    "@scratchpad/lexicons": "file:../packages/lexicons",
     "maplibre-gl": "^4.7.1"
   },
   "devDependencies": {

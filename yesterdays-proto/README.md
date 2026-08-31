@@ -99,8 +99,11 @@ The scheduled poller runs automatically once deployed.
 
 The lexicon spec (schema JSON + typed record shapes + NSID constants) is the
 shared contract, kept in its own package: `../packages/lexicons`
-(`@scratchpad/lexicons`). This prototype currently inlines the collection
-strings; point it at the package when you wire real workspace deps.
+(`@scratchpad/lexicons`). The Node-side code (`submit`, `poller`, `seed`) imports
+`NSID`, `LOCATION_TYPE`, and `GeorefRecord` from it — no hardcoded collection
+strings. It's a `file:` dependency built from source before the app builds (the
+`build:lexicons` script runs via `predev` / `prebuild` / `preseed` hooks), so
+`netlify dev`, `npm run build`, and `npm run seed` all compile it automatically.
 
 See `../yesterdays-atproto.html` for the full design, consensus rationale, phased
 plan, and open risks.

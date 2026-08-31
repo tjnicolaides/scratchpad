@@ -1,5 +1,6 @@
 import type { Handler } from "@netlify/functions";
 import { AtpAgent } from "@atproto/api";
+import { NSID, LOCATION_TYPE, type GeorefRecord } from "@scratchpad/lexicons";
 
 // POST /.netlify/functions/submit
 // Body: { archive, itemId, lat, lng, radiusMeters?, note? }
@@ -33,22 +34,22 @@ export const handler: Handler = async (event) => {
   const agent = new AtpAgent({ service: PDS_SERVICE ?? "https://bsky.social" });
   await agent.login({ identifier: ATP_HANDLE, password: ATP_APP_PASSWORD });
 
-  const location =
+  const location: GeorefRecord["location"] =
     typeof radiusMeters === "number"
       ? {
-          $type: "place.yesterdays.georef#circle",
+          $type: LOCATION_TYPE.circle,
           lat: String(lat),
           lng: String(lng),
           radiusMeters: Math.round(radiusMeters),
         }
       : {
-          $type: "place.yesterdays.georef#point",
+          $type: LOCATION_TYPE.point,
           lat: String(lat),
           lng: String(lng),
         };
 
-  const record = {
-    $type: "place.yesterdays.georef",
+  const record: GeorefRecord = {
+    $type: NSID.georef,
     subject: { archive, itemId },
     location,
     ...(note ? { note: String(note).slice(0, 300) } : {}),
@@ -57,7 +58,7 @@ export const handler: Handler = async (event) => {
 
   const res = await agent.com.atproto.repo.createRecord({
     repo: agent.session!.did,
-    collection: "place.yesterdays.georef",
+    collection: NSID.georef,
     record,
   });
 
