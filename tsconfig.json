@@ -5,6 +5,9 @@
   "references": [
     {
       "path": "./packages/hello"
+    },
+    {
+      "path": "./packages/lexicons"
     }
   ]
 }

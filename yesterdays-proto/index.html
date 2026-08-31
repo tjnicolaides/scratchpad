@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Yesterdays — prototype</title>
+  </head>
+  <body>
+    <div id="app">
+      <aside id="sidebar">
+        <header>
+          <h1>Yesterdays <span class="tag">prototype</span></h1>
+          <p class="hint">Pick a photo, then click the map to place your guess.</p>
+        </header>
+        <ul id="photos"></ul>
+
+        <section id="panel" hidden>
+          <img id="photo-img" alt="Selected historical photo (sample placeholder)" />
+          <h2 id="photo-title"></h2>
+
+          <div class="controls">
+            <label class="row">
+              <input type="checkbox" id="area-mode" />
+              Area guess (draw a circle instead of a point)
+            </label>
+            <label class="row" id="radius-wrap" hidden>
+              Radius (m)
+              <input type="number" id="radius" value="300" min="10" step="10" />
+            </label>
+            <input id="note" placeholder="optional note" maxlength="300" />
+            <button id="submit" disabled>Submit guess</button>
+          </div>
+
+          <p id="status" class="status"></p>
+          <div id="consensus"></div>
+          <button id="pollnow" class="ghost">Poll now (index new guesses)</button>
+        </section>
+      </aside>
+      <div id="map"></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
