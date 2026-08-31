@@ -45,3 +45,5 @@ Thumbs.db
 .claude/settings.local.json
 
 .nx/polygraph
+# Scoutbook research working clones
+upstream/
