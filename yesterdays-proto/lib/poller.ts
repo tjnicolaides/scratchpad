@@ -1,5 +1,5 @@
 import { IdResolver } from "@atproto/identity";
-import { NSID, LOCATION_TYPE } from "@scratchpad/lexicons";
+import { NSID, isCircle, type Location } from "@scratchpad/lexicons";
 import { sql } from "./db";
 
 // The AppView's ingest side. Walk a seed list of handles, resolve each to its
@@ -74,14 +74,26 @@ function getPdsEndpoint(doc: unknown): string | null {
 
 async function upsert(did: string, rec: RawRecord): Promise<boolean> {
   const v = rec.value ?? {};
-  const loc = (v.location ?? {}) as Record<string, any>;
+  const loc = v.location as Location | undefined;
   const subj = (v.subject ?? {}) as Record<string, any>;
-  const isCircle = loc.$type === LOCATION_TYPE.circle;
+
+  // Skip malformed records rather than poison the index.
+  if (!loc || typeof loc.$type !== "string" || !subj.archive || !subj.itemId) return false;
   const lat = Number.parseFloat(loc.lat);
   const lng = Number.parseFloat(loc.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
 
-  if (!Number.isFinite(lat) || !Number.isFinite(lng) || !subj.archive || !subj.itemId) {
-    return false; // skip malformed records rather than poison the index
+  // Discriminate the location union with the shared guard, which narrows the
+  // type so radiusMeters / bearingDeg are only reachable on the right variant.
+  let locType: "point" | "circle";
+  let radiusM: number | null = null;
+  let bearingDeg: number | null = null;
+  if (isCircle(loc)) {
+    locType = "circle";
+    radiusM = loc.radiusMeters != null ? Math.round(loc.radiusMeters) : null;
+  } else {
+    locType = "point";
+    bearingDeg = loc.bearingDeg != null ? Math.round(loc.bearingDeg) : null;
   }
 
   await sql`
@@ -89,9 +101,7 @@ async function upsert(did: string, rec: RawRecord): Promise<boolean> {
       (uri, cid, did, archive, item_id, loc_type, lat, lng, radius_m, bearing_deg, confidence, note, created_at)
     values (
       ${rec.uri}, ${rec.cid ?? null}, ${did}, ${subj.archive}, ${subj.itemId},
-      ${isCircle ? "circle" : "point"}, ${lat}, ${lng},
-      ${isCircle && loc.radiusMeters != null ? Math.round(loc.radiusMeters) : null},
-      ${!isCircle && loc.bearingDeg != null ? Math.round(loc.bearingDeg) : null},
+      ${locType}, ${lat}, ${lng}, ${radiusM}, ${bearingDeg},
       ${v.confidence ?? null}, ${v.note ?? null}, ${v.createdAt ?? null}
     )
     on conflict (uri) do update set
