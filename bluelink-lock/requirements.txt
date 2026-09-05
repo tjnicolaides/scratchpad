@@ -1,0 +1,4 @@
+hyundai-kia-connect-api==4.27.2
+python-dotenv==1.2.3
+flask==3.1.0
+gunicorn==23.0.0
