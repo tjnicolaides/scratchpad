@@ -10,6 +10,7 @@ the API surface, and a build recommendation.
 |---|---|
 | [`FINDINGS.md`](./FINDINGS.md) | The analysis: prior projects, PR reconciliation, build-vs-curate recommendation |
 | [`curated-tools.md`](./curated-tools.md) | Proposed ~20 task-shaped MCP tools, each mapped to the endpoints it composes |
+| [`auth-session-design.md`](./auth-session-design.md) | Auth/session architecture: JWT lifecycle, credential strategies, multi-unit state, security |
 | [`tool-surface.md`](./tool-surface.md) | All 108 API operations grouped into 13 categories (the auto-generated tool surface) |
 | [`PROVENANCE.md`](./PROVENANCE.md) | Where each vendored file came from, licenses, and caveats |
 | [`specs/scoutbook.openapi.yaml`](./specs/scoutbook.openapi.yaml) | dlaporte's comprehensive spec — 108 paths, OpenAPI 3.0.3 (⚠ all-rights-reserved, see PROVENANCE) |
