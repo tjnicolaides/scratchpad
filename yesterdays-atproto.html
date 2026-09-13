@@ -1,0 +1,728 @@
+<title>Yesterdays on atproto</title>
+<meta name="description" content="MVP design for a user-owned georeferencing app on the AT Protocol.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
+<style>
+  :root {
+    --ground: #eef1ef;
+    --surface: #ffffff;
+    --surface-2: #f5f7f6;
+    --ink: #15212a;
+    --ink-soft: #3c4a53;
+    --muted: #61727b;
+    --line: #d7dedb;
+    --line-strong: #b9c4c0;
+    --point: #c1442c;      /* POINT — a sharp, high-precision vote */
+    --point-soft: #f3ddd6;
+    --area: #1f7d72;       /* AREA — a soft constraint / geofence */
+    --area-soft: #d7ebe7;
+    --new: #b5851f;        /* the one genuinely new operational piece */
+    --new-soft: #f4e9cf;
+    --code-bg: #0f1a20;
+    --code-fg: #d7e2e4;
+    --code-key: #8fc9bf;
+    --code-str: #d8a07f;
+    --code-num: #cdb46a;
+    --code-punc: #7d8f92;
+    --code-cmt: #5f7377;
+    --shadow: 0 1px 2px rgba(20,33,42,.05), 0 8px 28px rgba(20,33,42,.06);
+    --maxw: 860px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0c1418;
+      --surface: #111c22;
+      --surface-2: #16232a;
+      --ink: #e7eef0;
+      --ink-soft: #b3c1c5;
+      --muted: #8298a0;
+      --line: #23343c;
+      --line-strong: #33474f;
+      --point: #e8735a;
+      --point-soft: #3a2019;
+      --area: #48b3a5;
+      --area-soft: #123029;
+      --new: #e0b74e;
+      --new-soft: #33290f;
+      --code-bg: #0a1216;
+      --code-fg: #cfdadd;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0c1418;
+    --surface: #111c22;
+    --surface-2: #16232a;
+    --ink: #e7eef0;
+    --ink-soft: #b3c1c5;
+    --muted: #8298a0;
+    --line: #23343c;
+    --line-strong: #33474f;
+    --point: #e8735a;
+    --point-soft: #3a2019;
+    --area: #48b3a5;
+    --area-soft: #123029;
+    --new: #e0b74e;
+    --new-soft: #33290f;
+    --code-bg: #0a1216;
+    --code-fg: #cfdadd;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Source Serif 4", Georgia, serif;
+    font-size: 18px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+
+  /* ---- header ---- */
+  header.masthead {
+    border-bottom: 1px solid var(--line);
+    background:
+      linear-gradient(180deg, var(--surface-2), var(--surface));
+    background-size: 100% 100%;
+  }
+  .masthead .wrap { padding-top: 56px; padding-bottom: 40px; }
+  .kicker {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 18px;
+  }
+  h1 {
+    font-family: "Archivo", system-ui, sans-serif;
+    font-weight: 800;
+    font-size: clamp(2.4rem, 6vw, 3.6rem);
+    line-height: 1.02;
+    letter-spacing: -.02em;
+    margin: 0 0 18px;
+    text-wrap: balance;
+  }
+  h1 .thin { font-weight: 600; color: var(--ink-soft); }
+  .dek {
+    font-size: 1.22rem;
+    color: var(--ink-soft);
+    max-width: 40ch;
+    margin: 0 0 28px;
+    text-wrap: pretty;
+  }
+  .chiprow { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    letter-spacing: .02em;
+    padding: 5px 11px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    color: var(--ink-soft);
+    background: var(--surface);
+    white-space: nowrap;
+  }
+
+  /* ---- section scaffolding ---- */
+  main { padding: 8px 0 80px; }
+  section { padding: 48px 0 8px; }
+  .eyebrow {
+    display: flex; align-items: baseline; gap: 12px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 12px;
+  }
+  .eyebrow .num {
+    color: var(--point);
+    font-weight: 600;
+  }
+  h2 {
+    font-family: "Archivo", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.6rem, 3.6vw, 2.15rem);
+    line-height: 1.12;
+    letter-spacing: -.015em;
+    margin: 0 0 16px;
+    text-wrap: balance;
+  }
+  h3 {
+    font-family: "Archivo", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 1.16rem;
+    letter-spacing: -.01em;
+    margin: 32px 0 8px;
+  }
+  h4 {
+    font-family: "Archivo", system-ui, sans-serif;
+    font-weight: 600; font-size: .95rem;
+    margin: 20px 0 6px;
+  }
+  p { margin: 0 0 16px; }
+  a { color: var(--area); text-underline-offset: 2px; }
+  strong { font-weight: 600; }
+  .lead { font-size: 1.12rem; color: var(--ink-soft); }
+  ul, ol { margin: 0 0 16px; padding-left: 1.25em; }
+  li { margin: 0 0 8px; }
+  li::marker { color: var(--muted); }
+
+  /* ---- callouts ---- */
+  .callout {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--new);
+    border-radius: 10px;
+    padding: 20px 22px;
+    margin: 24px 0;
+    box-shadow: var(--shadow);
+    font-size: .98rem;
+  }
+  .callout .tag {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--new);
+    display: block; margin-bottom: 8px; font-weight: 600;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.cut { border-left-color: var(--point); }
+  .callout.cut .tag { color: var(--point); }
+
+  /* ---- key/legend inline dots ---- */
+  .dot { display: inline-block; width: .72em; height: .72em; border-radius: 50%; vertical-align: baseline; margin-right: .1em; position: relative; top: .02em; }
+  .dot.point { background: var(--point); }
+  .swatch-area { display:inline-block; width:.8em; height:.8em; border-radius:3px; border:1.5px solid var(--area); background: var(--area-soft); vertical-align: baseline; position: relative; top:.04em; margin-right:.1em; }
+
+  /* ---- code blocks ---- */
+  .code {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    border-radius: 12px;
+    padding: 4px 2px;
+    margin: 18px 0 8px;
+    overflow-x: auto;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255,255,255,.05);
+  }
+  .code pre {
+    margin: 0; padding: 18px 20px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 13px; line-height: 1.6;
+    white-space: pre;
+  }
+  .code .filename {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px; letter-spacing: .04em;
+    color: var(--code-cmt);
+    padding: 12px 20px 4px;
+  }
+  .tok-key { color: var(--code-key); }
+  .tok-str { color: var(--code-str); }
+  .tok-num { color: var(--code-num); }
+  .tok-punc { color: var(--code-punc); }
+  .tok-cmt { color: var(--code-cmt); font-style: italic; }
+
+  /* ---- field tables ---- */
+  .tablewrap { overflow-x: auto; margin: 16px 0 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; min-width: 560px; }
+  th, td { text-align: left; padding: 11px 14px; vertical-align: top; border-bottom: 1px solid var(--line); }
+  thead th {
+    font-family: "Archivo", sans-serif; font-weight: 600; font-size: .76rem;
+    letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
+    background: var(--surface-2);
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td code, th code, p code, li code {
+    font-family: "IBM Plex Mono", monospace; font-size: .84em;
+    background: var(--surface-2); padding: 1px 5px; border-radius: 4px;
+    color: var(--ink);
+    border: 1px solid var(--line);
+  }
+  td .type { font-family: "IBM Plex Mono", monospace; font-size: .82em; color: var(--area); }
+
+  /* ---- figures ---- */
+  figure { margin: 24px 0; }
+  .figcard {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 14px; padding: 24px 22px 8px; box-shadow: var(--shadow);
+  }
+  figure svg { display: block; width: 100%; height: auto; color: var(--ink); }
+  figcaption {
+    font-size: .86rem; color: var(--muted); margin-top: 12px;
+    padding-top: 12px; border-top: 1px solid var(--line);
+    text-wrap: pretty;
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px 22px; margin: 4px 0 4px; font-size: .82rem; color: var(--ink-soft); font-family: "IBM Plex Mono", monospace; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .lgl { width: 26px; height: 0; border-top: 2px solid var(--ink); display: inline-block; }
+  .lgl.dash { border-top-style: dashed; }
+  .lgl.new { border-top-color: var(--new); border-top-width: 3px; }
+
+  /* ---- phase cards ---- */
+  .phases { display: grid; gap: 14px; margin: 20px 0; }
+  .phase {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 18px 20px; box-shadow: var(--shadow);
+    display: grid; grid-template-columns: auto 1fr; gap: 4px 18px;
+  }
+  .phase .pnum {
+    grid-row: 1 / span 2;
+    font-family: "Archivo", sans-serif; font-weight: 800; font-size: 1.5rem;
+    color: var(--surface); background: var(--ink);
+    width: 44px; height: 44px; border-radius: 10px;
+    display: grid; place-items: center;
+  }
+  .phase.p0 .pnum { background: var(--muted); }
+  .phase.p1 .pnum { background: var(--area); }
+  .phase.p2 .pnum { background: var(--point); }
+  .phase.p3 .pnum { background: var(--new); }
+  .phase h3 { margin: 0; font-size: 1.08rem; align-self: center; }
+  .phase .body { grid-column: 2; }
+  .phase .body p { margin: 6px 0 0; font-size: .96rem; }
+  .phase .ships {
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px;
+    letter-spacing: .04em; text-transform: uppercase; color: var(--muted);
+    margin-top: 10px;
+  }
+
+  /* ---- confidence tiers ---- */
+  .tiers { display: grid; gap: 10px; margin: 18px 0; }
+  .tier { display: grid; grid-template-columns: 130px 1fr; gap: 16px; align-items: start;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; box-shadow: var(--shadow); }
+  .tier .label { font-family: "Archivo", sans-serif; font-weight: 700; font-size: .95rem; display: flex; align-items: center; gap: 8px; }
+  .tier .bar { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .tier.high .bar { background: var(--area); }
+  .tier.med .bar { background: var(--new); }
+  .tier.low .bar { background: var(--muted); }
+  .tier.contested .bar { background: var(--point); }
+  .tier .desc { font-size: .92rem; color: var(--ink-soft); }
+  .tier .desc code { font-size: .82em; }
+
+  /* ---- risk list ---- */
+  .risks { display: grid; gap: 12px; margin: 20px 0; }
+  .risk { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; box-shadow: var(--shadow); }
+  .risk .q { font-family: "Archivo", sans-serif; font-weight: 700; font-size: 1rem; margin: 0 0 4px; }
+  .risk .q .rk { color: var(--point); font-family: "IBM Plex Mono", monospace; font-size: .8em; margin-right: 8px; }
+  .risk p { margin: 0; font-size: .93rem; color: var(--ink-soft); }
+  .risk .rec { margin-top: 8px; font-size: .88rem; }
+  .risk .rec b { font-family: "Archivo", sans-serif; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--area); }
+
+  hr.rule { border: none; border-top: 1px solid var(--line); margin: 8px 0 0; }
+  .footer { color: var(--muted); font-size: .82rem; padding: 32px 0 8px; font-family: "IBM Plex Mono", monospace; }
+
+  ::selection { background: var(--area-soft); }
+  @media (max-width: 620px) {
+    body { font-size: 17px; }
+    .tier { grid-template-columns: 1fr; gap: 6px; }
+    .phase { grid-template-columns: 1fr; }
+    .phase .pnum { grid-row: auto; }
+  }
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <p class="kicker">MVP Design Brief · AT Protocol · Grug-brained</p>
+    <h1>Yesterdays,<br><span class="thin">rebuilt on atproto</span></h1>
+    <p class="dek">Crowdsourced placement of historical photos onto a map — but every guess is a record the contributor owns, not a row you moderate.</p>
+    <div class="chiprow">
+      <span class="chip">point-or-area guesses</span>
+      <span class="chip">consensus, not accept/reject</span>
+      <span class="chip">social distribution</span>
+      <span class="chip">one new moving part: the AppView</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- STANCE -->
+  <section id="stance" style="padding-top:40px;">
+    <p class="lead">The whole design turns on one inversion: Yesterdays keeps a central table and an admin picks the one true location per photo. We keep <strong>every</strong> guess as a user-owned atproto record and let a read-only indexer turn the pile of guesses into a confidence surface. Nobody's contribution is ever rejected — it's weighed.</p>
+    <div class="callout">
+      <span class="tag">The honest cost</span>
+      <p>Almost everything here is a normal web app: a static single-page app, images hotlinked from source archives, records written to PDSes you don't run. The <strong>one genuinely new operational component is the AppView</strong> — an indexer that reads records out of atproto, stores geometry, computes consensus, and serves the map. That's a database plus a long-running worker you have to keep alive. Everything else you can lean on existing infra for. We do <em>not</em> build a PDS or a relay.</p>
+    </div>
+  </section>
+
+  <!-- 1. LEXICON -->
+  <section id="lexicon">
+    <p class="eyebrow"><span class="num">01</span> Lexicon schemas</p>
+    <h2>Two record types. One is optional.</h2>
+    <p>A contribution is a <code>georef</code> record in the contributor's own repo. Its location is a discriminated union: a <span class="dot point"></span><strong>point</strong> (a sharp vote) or an <span class="swatch-area"></span><strong>area</strong> (a soft "roughly here"). Photos are referenced by <strong>archive + item id</strong>, never by a central catalog id — so two people can georeference the same LOC photo without anything existing "in the middle" first.</p>
+
+    <div class="callout">
+      <span class="tag">Two atproto gotchas baked into the schema</span>
+      <p><strong>Lexicon has no float type</strong> (floats break the canonical CBOR hashing that gives records their CIDs). So lat/lng are <em>strings</em> in decimal degrees — which also happens to match the emerging <code>community.lexicon.location</code> convention, so we're not inventing a wheel here. Radius is an integer in meters, which is fine as-is. Second: we deliberately start the location union at <span class="dot point"></span>point + <span class="swatch-area"></span>circle only. <strong>GeoJSON polygon is cut from the MVP</strong> — see the note after the schema.</p>
+    </div>
+
+    <h3>The contribution record</h3>
+    <div class="code">
+      <div class="filename">place.yesterdays.georef</div>
+<pre><span class="tok-punc">{</span>
+  <span class="tok-key">"lexicon"</span><span class="tok-punc">:</span> <span class="tok-num">1</span><span class="tok-punc">,</span>
+  <span class="tok-key">"id"</span><span class="tok-punc">:</span> <span class="tok-str">"place.yesterdays.georef"</span><span class="tok-punc">,</span>
+  <span class="tok-key">"defs"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span>
+    <span class="tok-key">"main"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span>
+      <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"record"</span><span class="tok-punc">,</span>
+      <span class="tok-key">"key"</span><span class="tok-punc">:</span> <span class="tok-str">"tid"</span><span class="tok-punc">,</span>          <span class="tok-cmt">// one repo can hold many guesses</span>
+      <span class="tok-key">"record"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span>
+        <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"object"</span><span class="tok-punc">,</span>
+        <span class="tok-key">"required"</span><span class="tok-punc">:</span> <span class="tok-punc">[</span><span class="tok-str">"subject"</span><span class="tok-punc">,</span> <span class="tok-str">"location"</span><span class="tok-punc">,</span> <span class="tok-str">"createdAt"</span><span class="tok-punc">],</span>
+        <span class="tok-key">"properties"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span>
+          <span class="tok-key">"subject"</span><span class="tok-punc">:</span>  <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"ref"</span><span class="tok-punc">,</span> <span class="tok-key">"ref"</span><span class="tok-punc">:</span> <span class="tok-str">"#subject"</span> <span class="tok-punc">},</span>
+          <span class="tok-key">"location"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"union"</span><span class="tok-punc">,</span> <span class="tok-key">"refs"</span><span class="tok-punc">:</span> <span class="tok-punc">[</span><span class="tok-str">"#point"</span><span class="tok-punc">,</span> <span class="tok-str">"#circle"</span><span class="tok-punc">]</span> <span class="tok-punc">},</span>
+          <span class="tok-key">"confidence"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"string"</span><span class="tok-punc">,</span> <span class="tok-key">"knownValues"</span><span class="tok-punc">:</span> <span class="tok-punc">[</span><span class="tok-str">"sure"</span><span class="tok-punc">,</span> <span class="tok-str">"guess"</span><span class="tok-punc">]</span> <span class="tok-punc">},</span>
+          <span class="tok-key">"note"</span><span class="tok-punc">:</span>  <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"string"</span><span class="tok-punc">,</span> <span class="tok-key">"maxGraphemes"</span><span class="tok-punc">:</span> <span class="tok-num">300</span> <span class="tok-punc">},</span>
+          <span class="tok-key">"createdAt"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"string"</span><span class="tok-punc">,</span> <span class="tok-key">"format"</span><span class="tok-punc">:</span> <span class="tok-str">"datetime"</span> <span class="tok-punc">}</span>
+        <span class="tok-punc">}</span>
+      <span class="tok-punc">}</span>
+    <span class="tok-punc">},</span>
+
+    <span class="tok-key">"subject"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span>                       <span class="tok-cmt">// which photo — by external archive id</span>
+      <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"object"</span><span class="tok-punc">,</span>
+      <span class="tok-key">"required"</span><span class="tok-punc">:</span> <span class="tok-punc">[</span><span class="tok-str">"archive"</span><span class="tok-punc">,</span> <span class="tok-str">"itemId"</span><span class="tok-punc">],</span>
+      <span class="tok-key">"properties"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span>
+        <span class="tok-key">"archive"</span><span class="tok-punc">:</span>      <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"string"</span><span class="tok-punc">,</span> <span class="tok-key">"maxLength"</span><span class="tok-punc">:</span> <span class="tok-num">128</span> <span class="tok-punc">},</span>  <span class="tok-cmt">// "loc", "lva", "valentine"</span>
+        <span class="tok-key">"itemId"</span><span class="tok-punc">:</span>       <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"string"</span><span class="tok-punc">,</span> <span class="tok-key">"maxLength"</span><span class="tok-punc">:</span> <span class="tok-num">512</span> <span class="tok-punc">},</span>  <span class="tok-cmt">// stable id WITHIN that archive</span>
+        <span class="tok-key">"iiifManifest"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"string"</span><span class="tok-punc">,</span> <span class="tok-key">"format"</span><span class="tok-punc">:</span> <span class="tok-str">"uri"</span> <span class="tok-punc">},</span>
+        <span class="tok-key">"sourceUrl"</span><span class="tok-punc">:</span>    <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"string"</span><span class="tok-punc">,</span> <span class="tok-key">"format"</span><span class="tok-punc">:</span> <span class="tok-str">"uri"</span> <span class="tok-punc">}</span>
+      <span class="tok-punc">}</span>
+    <span class="tok-punc">},</span>
+
+    <span class="tok-key">"point"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span>                          <span class="tok-cmt">// a sharp vote: "it was HERE"</span>
+      <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"object"</span><span class="tok-punc">,</span>
+      <span class="tok-key">"required"</span><span class="tok-punc">:</span> <span class="tok-punc">[</span><span class="tok-str">"lat"</span><span class="tok-punc">,</span> <span class="tok-str">"lng"</span><span class="tok-punc">],</span>
+      <span class="tok-key">"properties"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span>
+        <span class="tok-key">"lat"</span><span class="tok-punc">:</span>        <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"string"</span> <span class="tok-punc">},</span>   <span class="tok-cmt">// decimal degrees, WGS84, as string</span>
+        <span class="tok-key">"lng"</span><span class="tok-punc">:</span>        <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"string"</span> <span class="tok-punc">},</span>
+        <span class="tok-key">"bearingDeg"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"integer"</span><span class="tok-punc">,</span> <span class="tok-key">"minimum"</span><span class="tok-punc">:</span> <span class="tok-num">0</span><span class="tok-punc">,</span> <span class="tok-key">"maximum"</span><span class="tok-punc">:</span> <span class="tok-num">359</span> <span class="tok-punc">}</span> <span class="tok-cmt">// optional camera facing</span>
+      <span class="tok-punc">}</span>
+    <span class="tok-punc">},</span>
+
+    <span class="tok-key">"circle"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span>                         <span class="tok-cmt">// a soft constraint: "somewhere around here"</span>
+      <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"object"</span><span class="tok-punc">,</span>
+      <span class="tok-key">"required"</span><span class="tok-punc">:</span> <span class="tok-punc">[</span><span class="tok-str">"lat"</span><span class="tok-punc">,</span> <span class="tok-str">"lng"</span><span class="tok-punc">,</span> <span class="tok-str">"radiusMeters"</span><span class="tok-punc">],</span>
+      <span class="tok-key">"properties"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span>
+        <span class="tok-key">"lat"</span><span class="tok-punc">:</span>          <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"string"</span> <span class="tok-punc">},</span>       <span class="tok-cmt">// center</span>
+        <span class="tok-key">"lng"</span><span class="tok-punc">:</span>          <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"string"</span> <span class="tok-punc">},</span>
+        <span class="tok-key">"radiusMeters"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"integer"</span><span class="tok-punc">,</span> <span class="tok-key">"minimum"</span><span class="tok-punc">:</span> <span class="tok-num">1</span><span class="tok-punc">,</span> <span class="tok-key">"maximum"</span><span class="tok-punc">:</span> <span class="tok-num">50000</span> <span class="tok-punc">}</span>
+      <span class="tok-punc">}</span>
+    <span class="tok-punc">}</span>
+  <span class="tok-punc">}</span>
+<span class="tok-punc">}</span></pre>
+    </div>
+
+    <h4>Field rationale</h4>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Why it's shaped this way</th></tr></thead>
+        <tbody>
+          <tr><td><code>subject.archive</code> + <code>itemId</code></td><td><span class="type">string</span></td><td>The join key. No central photo table — the pair <em>is</em> the photo's identity. <code>archive</code> is a short registry key so the indexer knows how to build a canonical IIIF URL if one isn't supplied.</td></tr>
+          <tr><td><code>subject.iiifManifest</code></td><td><span class="type">uri?</span></td><td>Optional. Lets a contributor pin the exact IIIF source so the app can render tiles straight from the archive — same "serve by reference, store no pixels" stance as Yesterdays.</td></tr>
+          <tr><td><code>location</code></td><td><span class="type">union</span></td><td>The core discriminated union. <code>#point</code> = sharp vote; <code>#circle</code> = soft area. The <code>$type</code> on the value tells the indexer which one it got.</td></tr>
+          <tr><td><code>point.lat / lng</code></td><td><span class="type">string</span></td><td>Decimal degrees as strings (no lexicon float). Parse to float only inside the indexer.</td></tr>
+          <tr><td><code>point.bearingDeg</code></td><td><span class="type">integer?</span></td><td>Camera facing, 0–359° from true north. Cheap to store, powers a "which way was the camera pointing" arrow later. Optional — never force it.</td></tr>
+          <tr><td><code>circle.radiusMeters</code></td><td><span class="type">integer</span></td><td>How rough the guess is. This number literally becomes the "softness" weight in consensus — a 3km circle counts for far less than a 40m one.</td></tr>
+          <tr><td><code>confidence</code></td><td><span class="type">enum?</span></td><td>Self-reported <code>sure</code> / <code>guess</code>. A light thumb on the scale; the geometry does most of the work.</td></tr>
+          <tr><td><code>createdAt</code></td><td><span class="type">datetime</span></td><td>Standard. Also lets the indexer take "latest wins" if one person revises their own guess.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout cut">
+      <span class="tag">Over-engineering flag — cut from v1</span>
+      <p><strong>GeoJSON polygon.</strong> It's tempting to "lean on the GeoJSON standard," but GeoJSON can't even express a circle, and its <code>[lng, lat]</code> ordering is a classic footgun against everyone's <code>lat, lng</code> habit. A circle (center + radius) covers the entire "I only know the neighborhood" case with two numbers. Add a <code>#polygon</code> ref to the union later <em>only</em> when a real contributor hits a shape a circle can't honestly express (a long riverfront, an L-shaped block). It slots in as a third union member with zero migration — so there's no cost to waiting.</p>
+    </div>
+
+    <h3>The photo-enrichment record <span style="font-weight:400;color:var(--muted);font-size:.9rem;">— optional</span></h3>
+    <p>Since there's no central catalog, title/date/description also have to live somewhere ownable. A second record type lets anyone annotate a photo, keyed by the same <code>subject</code>. The indexer merges these the same way it merges guesses. Skip it entirely in the walking skeleton.</p>
+    <div class="code">
+      <div class="filename">place.yesterdays.photo</div>
+<pre><span class="tok-punc">{</span>
+  <span class="tok-key">"lexicon"</span><span class="tok-punc">:</span> <span class="tok-num">1</span><span class="tok-punc">,</span>
+  <span class="tok-key">"id"</span><span class="tok-punc">:</span> <span class="tok-str">"place.yesterdays.photo"</span><span class="tok-punc">,</span>
+  <span class="tok-key">"defs"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span> <span class="tok-key">"main"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span>
+    <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"record"</span><span class="tok-punc">,</span> <span class="tok-key">"key"</span><span class="tok-punc">:</span> <span class="tok-str">"tid"</span><span class="tok-punc">,</span>
+    <span class="tok-key">"record"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span>
+      <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"object"</span><span class="tok-punc">,</span>
+      <span class="tok-key">"required"</span><span class="tok-punc">:</span> <span class="tok-punc">[</span><span class="tok-str">"subject"</span><span class="tok-punc">,</span> <span class="tok-str">"createdAt"</span><span class="tok-punc">],</span>
+      <span class="tok-key">"properties"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span>
+        <span class="tok-key">"subject"</span><span class="tok-punc">:</span>     <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"ref"</span><span class="tok-punc">,</span> <span class="tok-key">"ref"</span><span class="tok-punc">:</span> <span class="tok-str">"place.yesterdays.georef#subject"</span> <span class="tok-punc">},</span>
+        <span class="tok-key">"title"</span><span class="tok-punc">:</span>       <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"string"</span><span class="tok-punc">,</span> <span class="tok-key">"maxGraphemes"</span><span class="tok-punc">:</span> <span class="tok-num">200</span> <span class="tok-punc">},</span>
+        <span class="tok-key">"dateText"</span><span class="tok-punc">:</span>    <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"string"</span> <span class="tok-punc">},</span>          <span class="tok-cmt">// "c. 1920s" — fuzzy on purpose</span>
+        <span class="tok-key">"yearStart"</span><span class="tok-punc">:</span>   <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"integer"</span> <span class="tok-punc">},</span>       <span class="tok-cmt">// for range filtering / a time slider</span>
+        <span class="tok-key">"yearEnd"</span><span class="tok-punc">:</span>     <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"integer"</span> <span class="tok-punc">},</span>
+        <span class="tok-key">"description"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"string"</span><span class="tok-punc">,</span> <span class="tok-key">"maxGraphemes"</span><span class="tok-punc">:</span> <span class="tok-num">2000</span> <span class="tok-punc">},</span>
+        <span class="tok-key">"tags"</span><span class="tok-punc">:</span>        <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"array"</span><span class="tok-punc">,</span> <span class="tok-key">"items"</span><span class="tok-punc">:</span> <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"string"</span> <span class="tok-punc">},</span> <span class="tok-key">"maxLength"</span><span class="tok-punc">:</span> <span class="tok-num">12</span> <span class="tok-punc">},</span>
+        <span class="tok-key">"createdAt"</span><span class="tok-punc">:</span>   <span class="tok-punc">{</span> <span class="tok-key">"type"</span><span class="tok-punc">:</span> <span class="tok-str">"string"</span><span class="tok-punc">,</span> <span class="tok-key">"format"</span><span class="tok-punc">:</span> <span class="tok-str">"datetime"</span> <span class="tok-punc">}</span>
+      <span class="tok-punc">}</span>
+    <span class="tok-punc">}</span>
+  <span class="tok-punc">}</span> <span class="tok-punc">}</span>
+<span class="tok-punc">}</span></pre>
+    </div>
+    <p style="font-size:.9rem;color:var(--muted);"><em>Namespace note:</em> <code>place.yesterdays.*</code> is a placeholder. A real NSID needs a domain you actually control (reverse-DNS). Before writing anything to production PDSes, also check whether <code>community.lexicon.location.*</code> is far enough along to reuse for the geometry defs rather than minting your own.</p>
+  </section>
+
+  <!-- 2. COMPONENTS -->
+  <section id="components">
+    <p class="eyebrow"><span class="num">02</span> What runs, and what talks to what</p>
+    <h2>Four things you build, three you borrow</h2>
+    <p>Follow a single guess from the moment a contributor drops a pin to the moment it shows up on someone else's map. The only box with a heavy border is the only thing that's operationally new.</p>
+
+    <figure>
+      <div class="figcard">
+        <svg viewBox="0 0 880 470" role="img" aria-label="Component and data-flow diagram. The contributor's browser writes a georef record to their PDS via createRecord. The AppView polls PDSes or reads a Jetstream backfill, stores geometry in PostGIS, computes consensus, and serves a read API back to the browser's map. Source archives serve IIIF image tiles directly to the browser. The browser optionally posts to Bluesky, which drives new contributors back.">
+          <defs>
+            <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+            </marker>
+            <marker id="ahn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--new)"/>
+            </marker>
+          </defs>
+
+          <!-- ARCHIVES -->
+          <rect x="560" y="30" width="284" height="60" rx="10" fill="var(--surface-2)" stroke="var(--line-strong)"/>
+          <text x="702" y="55" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="700" font-size="14" fill="currentColor">Source archives</text>
+          <text x="702" y="74" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)">LOC · LVA · Valentine · VCU — borrowed</text>
+
+          <!-- BROWSER -->
+          <rect x="28" y="150" width="216" height="104" rx="12" fill="var(--surface)" stroke="var(--line-strong)" stroke-width="1.5"/>
+          <text x="136" y="180" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="700" font-size="15" fill="currentColor">Browser SPA</text>
+          <text x="136" y="201" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--muted)">map · draw point/area</text>
+          <text x="136" y="217" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--muted)">OAuth to user's PDS</text>
+          <text x="136" y="238" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--area)">static host — borrowed</text>
+
+          <!-- PDS -->
+          <rect x="330" y="150" width="168" height="104" rx="12" fill="var(--surface)" stroke="var(--line-strong)" stroke-width="1.5"/>
+          <text x="414" y="184" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="700" font-size="15" fill="currentColor">User's PDS</text>
+          <text x="414" y="205" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--muted)">holds the record</text>
+          <text x="414" y="221" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--muted)">in the user's repo</text>
+          <text x="414" y="242" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--area)">borrowed</text>
+
+          <!-- APPVIEW (the new thing) -->
+          <rect x="584" y="140" width="268" height="124" rx="12" fill="var(--new-soft)" stroke="var(--new)" stroke-width="2.5"/>
+          <text x="718" y="167" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="800" font-size="15" fill="currentColor">AppView (indexer)</text>
+          <text x="718" y="184" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--new)" font-weight="600">◆ THE NEW MOVING PART</text>
+          <text x="718" y="205" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--ink-soft)">ingest → validate records</text>
+          <text x="718" y="221" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--ink-soft)">PostGIS: store geometry</text>
+          <text x="718" y="237" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--ink-soft)">compute consensus</text>
+          <text x="718" y="253" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--ink-soft)">serve read API</text>
+
+          <!-- BLUESKY -->
+          <rect x="330" y="380" width="168" height="60" rx="12" fill="var(--surface-2)" stroke="var(--line-strong)"/>
+          <text x="414" y="405" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="700" font-size="14" fill="currentColor">Bluesky feeds</text>
+          <text x="414" y="424" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--muted)">distribution — borrowed</text>
+
+          <!-- (1) browser -> PDS  write -->
+          <line x1="244" y1="188" x2="322" y2="188" stroke="currentColor" stroke-width="2" marker-end="url(#ah)"/>
+          <text x="283" y="178" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor" font-weight="600">① write</text>
+          <text x="283" y="205" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="var(--muted)">createRecord</text>
+
+          <!-- (2) PDS -> AppView ingest -->
+          <line x1="498" y1="190" x2="576" y2="190" stroke="currentColor" stroke-width="2" marker-end="url(#ah)"/>
+          <text x="537" y="180" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor" font-weight="600">② ingest</text>
+          <text x="537" y="207" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="var(--muted)">poll / Jetstream</text>
+
+          <!-- (3) AppView -> browser  read (dashed) -->
+          <path d="M718,264 L718,300 L136,300 L136,258" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#ah)"/>
+          <text x="430" y="292" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor" font-weight="600">③ read API — clusters + confidence for a photo</text>
+
+          <!-- archives -> browser  IIIF (dashed) -->
+          <path d="M560,66 L300,66 L300,148" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#ah)"/>
+          <text x="404" y="58" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--muted)">IIIF image tiles (hotlinked, no pixels stored)</text>
+
+          <!-- browser -> bluesky optional post -->
+          <path d="M150,254 L150,410 L326,410" fill="none" stroke="currentColor" stroke-width="2" marker-end="url(#ah)"/>
+          <text x="238" y="402" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor" font-weight="600">④ optional post</text>
+
+          <!-- bluesky -> browser link back (dashed) -->
+          <path d="M414,380 L414,340 L196,340 L196,254" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#ah)"/>
+          <text x="300" y="333" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--muted)">link back → new guesses</text>
+        </svg>
+        <div class="legend">
+          <span><span class="lgl"></span> writes / new data</span>
+          <span><span class="lgl dash"></span> reads</span>
+          <span><span class="lgl new"></span> the one new component you operate</span>
+        </div>
+        <figcaption>The write path (①②) and read path (③) never touch the same store: guesses land in the user's repo, and the AppView is a downstream, rebuildable projection of them. Tear the AppView down and rebuild it from the PDSes at any time — no user data lives in it. That's the property that makes the "no accept/reject" model safe.</figcaption>
+      </div>
+    </figure>
+
+    <div class="callout cut">
+      <span class="tag">Over-engineering flag — how the AppView ingests</span>
+      <p>The brief says "backfill by polling PDSes." Be careful: you can't poll <em>all</em> PDSes — there's no such list — you can only poll repos you already know about. So polling needs a seed set of contributor handles, which is fine early (you'll know your first users) but doesn't discover strangers. The honest pragmatic answer is <strong>Jetstream</strong> — a filtered, JSON firehose someone else already runs — subscribed to just our two record types. It's less code than a robust poller and it <em>does</em> discover new contributors. So: poll a seed list for the skeleton; move to Jetstream the moment you want open contribution. Running your own relay/firehose stays off the table.</p>
+    </div>
+  </section>
+
+  <!-- 3. CONSENSUS -->
+  <section id="consensus">
+    <p class="eyebrow"><span class="num">03</span> Consensus, in plain terms</p>
+    <h2>Every guess is a weight, not a vote you count</h2>
+    <p>Think of each contribution as dropping weight onto the map. A <span class="dot point"></span><strong>point</strong> drops a tall, narrow pile — it's confident and specific. A <span class="swatch-area"></span><strong>circle</strong> spreads the same amount of weight thinly across its whole area — a 40m circle is a modest hill, a 3km circle is barely a smudge. Where piles stack up, confidence rises. Where they don't, it stays honest and low.</p>
+
+    <figure>
+      <div class="figcard">
+        <svg viewBox="0 0 880 320" role="img" aria-label="Two scenarios side by side. Left: several points clustered tightly inside an overlapping circle produce one high-confidence marker. Right: two separate clusters of points far apart produce two markers labelled contested, not one averaged pin.">
+          <!-- divider -->
+          <line x1="440" y1="24" x2="440" y2="296" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 4"/>
+
+          <!-- LEFT: agreement -->
+          <text x="30" y="40" font-family="Archivo, sans-serif" font-weight="700" font-size="14" fill="currentColor">Guesses agree</text>
+          <text x="30" y="58" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--muted)">points cluster · a circle overlaps them</text>
+          <!-- soft circle (area) -->
+          <circle cx="215" cy="180" r="78" fill="var(--area-soft)" stroke="var(--area)" stroke-width="1.5" stroke-dasharray="5 4"/>
+          <text x="215" y="115" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--area)">area: "this block"</text>
+          <!-- points -->
+          <circle cx="200" cy="175" r="5.5" fill="var(--point)"/>
+          <circle cx="222" cy="168" r="5.5" fill="var(--point)"/>
+          <circle cx="230" cy="192" r="5.5" fill="var(--point)"/>
+          <circle cx="205" cy="196" r="5.5" fill="var(--point)"/>
+          <circle cx="243" cy="178" r="5.5" fill="var(--point)"/>
+          <!-- consensus marker -->
+          <circle cx="218" cy="182" r="30" fill="none" stroke="var(--area)" stroke-width="2.5" opacity="0.55"/>
+          <circle cx="218" cy="182" r="18" fill="none" stroke="var(--area)" stroke-width="2.5" opacity="0.8"/>
+          <path d="M218,168 L218,196 M204,182 L232,182" stroke="var(--area)" stroke-width="2.5"/>
+          <rect x="150" y="248" width="130" height="26" rx="13" fill="var(--area)"/>
+          <text x="215" y="265" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="700" font-size="12" fill="#fff">HIGH confidence</text>
+
+          <!-- RIGHT: contested -->
+          <text x="466" y="40" font-family="Archivo, sans-serif" font-weight="700" font-size="14" fill="currentColor">Guesses split</text>
+          <text x="466" y="58" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--muted)">two clusters, far apart — don't average them</text>
+          <!-- cluster A -->
+          <circle cx="560" cy="150" r="5.5" fill="var(--point)"/>
+          <circle cx="576" cy="140" r="5.5" fill="var(--point)"/>
+          <circle cx="570" cy="162" r="5.5" fill="var(--point)"/>
+          <circle cx="568" cy="151" r="16" fill="none" stroke="var(--point)" stroke-width="2.5" opacity="0.8"/>
+          <rect x="516" y="188" width="104" height="23" rx="11.5" fill="none" stroke="var(--point)" stroke-width="1.5"/>
+          <text x="568" y="204" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--point)">cluster A · 3</text>
+          <!-- cluster B -->
+          <circle cx="720" cy="220" r="5.5" fill="var(--point)"/>
+          <circle cx="736" cy="212" r="5.5" fill="var(--point)"/>
+          <circle cx="728" cy="232" r="5.5" fill="var(--point)"/>
+          <circle cx="748" cy="226" r="5.5" fill="var(--point)"/>
+          <circle cx="732" cy="222" r="18" fill="none" stroke="var(--point)" stroke-width="2.5" opacity="0.8"/>
+          <rect x="682" y="248" width="104" height="23" rx="11.5" fill="none" stroke="var(--point)" stroke-width="1.5"/>
+          <text x="734" y="264" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--point)">cluster B · 4</text>
+          <!-- contested link -->
+          <line x1="586" y1="158" x2="714" y2="216" stroke="var(--point)" stroke-width="1.5" stroke-dasharray="4 4"/>
+          <text x="648" y="180" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="700" font-size="12" fill="var(--point)" transform="rotate(24 648 180)">CONTESTED</text>
+        </svg>
+        <figcaption>Left: overlapping evidence converges — the marker sits at the weighted center and reads HIGH. Right: two stable clusters that don't reconcile are shown <em>both</em>, each with its own strength, and flagged contested. The one thing the system must never do is silently average them into a single pin in the empty space between — that would invent a location nobody guessed.</figcaption>
+      </div>
+    </figure>
+
+    <h3>The MVP algorithm (deliberately not a KDE)</h3>
+    <ol>
+      <li><strong>Gather</strong> all current <code>georef</code> records for a photo (one per contributor — latest <code>createdAt</code> wins if someone revised).</li>
+      <li><strong>Cluster the points</strong> by proximity — a simple distance threshold (say ~75m in a city) is enough; DBSCAN if you want to be fancy, but you don't need to be yet.</li>
+      <li><strong>Fold in the areas as soft support.</strong> A circle doesn't create a cluster on its own; it <em>boosts</em> a point-cluster whose center falls inside it, and the boost is bigger for tighter circles. Areas with no points inside them become a faint fallback region shown only when there are no point clusters at all.</li>
+      <li><strong>Score each cluster</strong>: <code>points in cluster</code> + <code>overlapping areas × small weight</code>, penalized by how spread out the cluster is. Highest-scoring cluster centroid is the displayed location.</li>
+      <li><strong>Detect contest</strong>: if a second cluster scores within, say, 60% of the top one and sits well outside it, mark the photo contested and render both.</li>
+    </ol>
+    <p>No grid, no gaussian math, nothing to tune blindly. It's explainable in a sentence to a contributor ("three people put it here, one drew a circle around it, so we're fairly sure"), which matters for trust.</p>
+
+    <h3>What confidence a photo shows</h3>
+    <div class="tiers">
+      <div class="tier high"><div class="label"><span class="bar"></span>High</div><div class="desc">≥3 agreeing contributions, tight spread, no rival cluster — or a couple of tight points sitting inside overlapping areas. Rendered as a solid pin.</div></div>
+      <div class="tier med"><div class="label"><span class="bar"></span>Medium</div><div class="desc">2 agreeing points, or 1 point corroborated by an area it sits inside. A pin with a "needs a second opinion" hint.</div></div>
+      <div class="tier low"><div class="label"><span class="bar"></span>Low</div><div class="desc">A single guess, or only wide areas and no points. Shown as a translucent area/blob, never a hard pin — the map should <em>look</em> unsure.</div></div>
+      <div class="tier contested"><div class="label"><span class="bar"></span>Contested</div><div class="desc">Two or more comparable clusters that don't reconcile. Both drawn, both labeled, plus a "locations disagree" chip. Disagreement is content, not an error.</div></div>
+    </div>
+
+    <div class="callout cut">
+      <span class="tag">Over-engineering flag — cut from v1</span>
+      <p><strong>A real kernel-density confidence surface / heatmap.</strong> It looks great in a demo and it's the "right" model of a probability field, but it needs a grid, a bandwidth parameter you'll fiddle with forever, and tiles to serve it. Clustering gives you the same three answers a user cares about — <em>where, how sure, and is it contested</em> — with arithmetic. Build the heatmap in Phase 3 as a visual upgrade once you have enough real guesses to tune it against.</p>
+    </div>
+  </section>
+
+  <!-- 4. BUILD PLAN -->
+  <section id="plan">
+    <p class="eyebrow"><span class="num">04</span> Phased build</p>
+    <h2>Thinnest walking skeleton first</h2>
+    <p>The skeleton's job is not to be useful — it's to prove the atproto write → index → read loop end to end with the least code. Everything valuable comes after that loop is real.</p>
+
+    <div class="phases">
+      <div class="phase p0">
+        <div class="pnum">0</div>
+        <h3>Walking skeleton — points only</h3>
+        <div class="body">
+          <p>One archive, a handful of hardcoded photos rendered via IIIF. Log in with OAuth, drop a <em>point</em>, write one <code>georef</code> record to your PDS. The AppView polls a seed list of a few known handles, stores raw points, and serves "all points for photo X." The map shows the raw dots — <strong>no consensus yet</strong>. If a dot you place shows up on a second browser, the architecture is proven.</p>
+          <p class="ships">Ships: lexicon (point only) · OAuth write · poller · Postgres · dumb read API · map</p>
+        </div>
+      </div>
+      <div class="phase p1">
+        <div class="pnum">1</div>
+        <h3>Areas + consensus</h3>
+        <div class="body">
+          <p>Add <code>#circle</code> to the union and a "draw a circle" tool. Add PostGIS and the clustering/scoring above. The map now renders confidence tiers, area overlays, and the contested state. This is the first version that's actually <em>better</em> than a spreadsheet of pins.</p>
+          <p class="ships">Ships: circle geometry · PostGIS · cluster + score · confidence rendering</p>
+        </div>
+      </div>
+      <div class="phase p2">
+        <div class="pnum">2</div>
+        <h3>The social loop</h3>
+        <div class="body">
+          <p>On a guess, optionally cross-post to Bluesky (an <code>app.bsky.feed.post</code> with a static map thumbnail and a link back). Add a leaderboard from indexed contributions and a GeoGuessr-style mode: show a photo, take a guess, score it against the current consensus. Switch ingestion from the seed-list poller to Jetstream so strangers can join.</p>
+          <p class="ships">Ships: Bluesky post · Jetstream ingest · leaderboard · guess-and-score mode</p>
+        </div>
+      </div>
+      <div class="phase p3">
+        <div class="pnum">3</div>
+        <h3>Earns-its-place later</h3>
+        <div class="body">
+          <p>Only if real usage demands them: GeoJSON polygons for shapes a circle can't honestly hold; a KDE heatmap surface; a labeler/blocklist for moderation; camera-bearing arrows; multi-archive support with a shared archive registry.</p>
+          <p class="ships">Deferred until a real contributor or number forces the issue</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. RISKS -->
+  <section id="risks">
+    <p class="eyebrow"><span class="num">05</span> Open questions for a human</p>
+    <h2>Decisions I shouldn't make alone</h2>
+    <div class="risks">
+      <div class="risk">
+        <p class="q"><span class="rk">R1</span>Moderation without deletion</p>
+        <p>You can't delete someone else's record — it lives in their repo. The AppView can only <em>refuse to index</em> spam, slurs, or troll guesses. That's a labeler/blocklist story, and it's a real one the moment contribution is open. Who runs it, and by what policy?</p>
+        <p class="rec"><b>Leaning</b> AppView-side allow/deny list for the skeleton; a proper atproto labeler in Phase 2+.</p>
+      </div>
+      <div class="risk">
+        <p class="q"><span class="rk">R2</span>Consensus gaming via the social loop</p>
+        <p>Leaderboards reward volume, and volume can move consensus. One motivated person with three accounts can manufacture a "high-confidence" cluster. How much Sybil resistance is worth building before launch vs. accepting it for an MVP among a friendly early community?</p>
+        <p class="rec"><b>Leaning</b> weight by distinct account age/reputation later; accept the risk in the skeleton.</p>
+      </div>
+      <div class="risk">
+        <p class="q"><span class="rk">R3</span>The archive registry &amp; photo identity</p>
+        <p>Everything hinges on <code>archive + itemId</code> being stable and canonical. Who governs the list of archive keys? What happens when the same photo exists in two archives — are those one photo or two? Do we trust contributor-supplied IIIF URLs or resolve them ourselves?</p>
+        <p class="rec"><b>Leaning</b> a small hand-curated registry we control; treat cross-archive dedupe as out of scope for v1.</p>
+      </div>
+      <div class="risk">
+        <p class="q"><span class="rk">R4</span>Lat/lng encoding — commit before writing anything</p>
+        <p>Strings (chosen here) vs. fixed-point integers (e.g. microdegrees). Strings are readable and match <code>community.lexicon</code>; integers are unambiguous but need a documented scale. This is a one-way door once records exist in the wild.</p>
+        <p class="rec"><b>Leaning</b> strings, aligned to the community lexicon — but confirm that lexicon's direction first.</p>
+      </div>
+      <div class="risk">
+        <p class="q"><span class="rk">R5</span>Licensing &amp; image rights</p>
+        <p>Yesterdays is AGPLv3 — do we clean-room or inherit its obligations? And IIIF hotlinking has per-archive terms; some archives may not want their tiles embedded in a gamified app. Worth a check with the archives before the social loop amplifies traffic.</p>
+        <p class="rec"><b>Leaning</b> clean-room the code; get explicit OK from at least one archive before Phase 2.</p>
+      </div>
+      <div class="risk">
+        <p class="q"><span class="rk">R6</span>Confidence thresholds are guesses</p>
+        <p>The "≥3 = high," "75m cluster radius," "60% = contested" numbers are placeholders. They can only be tuned against real contribution patterns, which we won't have until the skeleton is live. Plan to revisit them, and don't over-promise accuracy early.</p>
+        <p class="rec"><b>Leaning</b> ship the placeholders, instrument them, tune in Phase 1 with real data.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+  <p class="footer">Draft design · placeholder namespace place.yesterdays.* · figures are hand-built, tune before implementation</p>
+
+</main>

@@ -1,0 +1,25 @@
+{
+  "lexicon": 1,
+  "id": "place.yesterdays.photo",
+  "description": "Optional crowd enrichment for a photo (title, date, description), keyed by the same subject as a georef. Not used by the walking skeleton.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["subject", "createdAt"],
+        "properties": {
+          "subject": { "type": "ref", "ref": "place.yesterdays.georef#subject" },
+          "title": { "type": "string", "maxGraphemes": 200, "maxLength": 2000 },
+          "dateText": { "type": "string", "description": "Human date as printed/estimated, e.g. 'c. 1920s'. Fuzzy on purpose." },
+          "yearStart": { "type": "integer", "description": "For range filtering / a time slider." },
+          "yearEnd": { "type": "integer" },
+          "description": { "type": "string", "maxGraphemes": 2000, "maxLength": 20000 },
+          "tags": { "type": "array", "items": { "type": "string", "maxLength": 128 }, "maxLength": 12 },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}
