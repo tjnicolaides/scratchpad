@@ -51,12 +51,17 @@ That's fine for receipts and makes retries trivial (a failed row stays `queued`/
   taps and people won't remember the address.
 - **Registration friction (the real cost of SMS):** US carriers block outbound texts from
   unregistered numbers, so confirmations won't deliver until one of these is approved:
-  - **Toll-free verification (recommended):** $2.15/mo number, no brand/campaign fees;
-    approval typically takes days to a couple of weeks. Wants a legal name, and (as of recent
-    rules) usually a business registration number — the troop's or chartered org's EIN.
-  - **A2P 10DLC (local number):** $1.15/mo number + ~$24.50 one-time (brand + $15 campaign
-    vetting) + ~$1.50–2/mo campaign fee. The **Sole Proprietor** path works with no EIN, in
-    your name — the fallback if the troop has no EIN.
+  - **Toll-free verification (chosen):** $2.15/mo number, no brand/campaign fees;
+    approval typically takes days to a couple of weeks. Since Feb 17, 2026 every business
+    type needs a business registration number (EIN) **except sole proprietor**. So:
+    - Troop has its own EIN → register as the troop (nonprofit). Best for handoff.
+    - No troop EIN → register as sole proprietor in the chair's name. No EIN needed; the
+      number is tied to you, and a successor would re-verify under their own name.
+    - Don't borrow the chartered org's EIN unless they agree: the name must match the
+      EIN's legal record, so the number would be registered as theirs.
+  - **A2P 10DLC (local number): not needed.** $1.15/mo number + ~$24.50 one-time (brand +
+    $15 campaign vetting) + ~$1.50–2/mo campaign fee. Only worth it if toll-free
+    verification is rejected.
   - Submit on day one; build Phase 1 while it's in review. Inbound still works before
     approval, so the pipeline can be tested end to end, with replies logged instead of sent.
 
@@ -102,10 +107,14 @@ That's fine for receipts and makes retries trivial (a failed row stays `queued`/
   same sender + amount + date within 7 days → flag possible duplicate.
 - Image prep: save the original to Drive, send Claude the Drive-rendered JPEG thumbnail at
   ~1600 px. This also converts iPhone HEIC and shrinks 8 MB email attachments.
-- Model: **`claude-opus-5` at `effort: low`** by default (it's a config value in Script
-  Properties). Around $0.025/receipt. Sonnet 5 or Haiku 4.5 would cut that to roughly $0.01 or
-  $0.004 — see Blocking Q4. Calls are raw `UrlFetchApp` HTTP since Apps Script can't load
-  the npm SDK.
+- Model: **`claude-haiku-4-5`** (a config value in Script Properties). It supports image
+  and PDF input and structured outputs; about $0.004/receipt. No thinking needed for this
+  task. Haiku is the most likely to misread faded thermal paper, crumpled receipts, or
+  handwritten totals. The confidence fields, validation checks, and single follow-up
+  question cover that: a doubtful total becomes a question to the submitter, not a
+  wrong row. Phase 2's 20-receipt test set confirms it. If it falls short, change the
+  model property to `claude-sonnet-5` (~$0.01/receipt); no code change. Calls are raw
+  `UrlFetchApp` HTTP since Apps Script can't load the npm SDK.
 
 ### D5. Sender allowlist — **People tab; unknown senders are quarantined, not processed**
 
@@ -212,21 +221,20 @@ of FIX ("trip summer camp", "total 41.18") into a field patch.
 Assumes 60 receipts/month, ~20 follow-up/correction texts in, ~80 texts out.
 Twilio rates from its US pricing page (Sept 2026). Claude rates are list prices.
 
-| Item | Toll-free path | 10DLC path |
-|---|---|---|
-| Phone number | $2.15 | $1.15 |
-| 10DLC campaign fee | — | ~$1.50–2.00 |
-| Inbound MMS 60 × $0.0165 | $0.99 | $0.99 |
-| Inbound SMS 20 × $0.0083 | $0.17 | $0.17 |
-| Outbound SMS 80 × ($0.0083 + ~$0.0045 carrier fee) | $1.02 | $1.02 |
-| Claude, `claude-opus-5` low effort (~$0.025/receipt + corrections) | ~$1.70 | ~$1.70 |
-| Google Sheet/Drive/Apps Script (existing Workspace) | $0 | $0 |
-| **Monthly total** | **~$6** | **~$6.50** |
-| One-time | $0 | ~$24.50 |
+| Item | Monthly |
+|---|---|
+| Toll-free number | $2.15 |
+| Inbound MMS 60 × $0.0165 | $0.99 |
+| Inbound SMS 20 × $0.0083 | $0.17 |
+| Outbound SMS 80 × ($0.0083 + ~$0.0045 carrier fee) | $1.02 |
+| Claude, `claude-haiku-4-5` (~$0.004/receipt + corrections) | ~$0.35 |
+| Google Sheet/Drive/Apps Script (existing Workspace) | $0 |
+| **Monthly total** | **~$4.70** |
+| One-time (toll-free verification) | $0 |
 
-- A busy month (summer camp, 150 receipts) comes to about $11–12. A year comes to about **$75–90**.
-- Using Sonnet 5 instead of Opus 5 saves about $1/month; Haiku 4.5 saves about $1.40.
-- Email-only launch: Claude cost alone, about $1.70/month.
+- A busy month (summer camp, 150 receipts) comes to about $8.50. A year comes to about **$60–65**.
+- Switching to Sonnet 5 adds about $0.40/month.
+- Email-only launch: Claude cost alone, about $0.35/month.
 - Set a $20/month spend limit on the Anthropic key and a low-balance alert on Twilio.
 
 ---
@@ -293,18 +301,17 @@ Rough effort: Phase 1 one evening; Phase 2 a weekend; Phases 3–4 an evening ea
 
 ## 9. Blocking questions
 
-1. **Legal identity for SMS registration.** Does the troop (or its chartered organization)
-   have an EIN and legal name you can use for Twilio verification? If yes → toll-free. If no
-   → 10DLC Sole Proprietor registered to you personally (works, but ties the number to you).
+1. **Toll-free registration identity.** Does the troop have its own EIN (often the one on
+   its bank account)? If yes, register as the troop. If no, register as sole proprietor in
+   your name. Toll-free works either way.
 2. **Which Google account owns this?** Is there a troop Workspace domain/account (e.g.
    `treasurer@troopNNN.org`) to own the Sheet, script, and `receipts@` group, or would it
    live in your personal Workspace for now?
 3. **Treasurer's books.** Does the treasurer already use budget line items (a spreadsheet,
    QuickBooks, Scoutbook/TroopWebHost)? If so I'll map the categories 1:1 to those instead of
    the starter set. Also: fiscal year Jan–Dec, or Sep–Aug?
-4. **Model.** OK to default to `claude-opus-5` (~$1.70/mo)? Or do you want to name Sonnet 5
-   (~$0.70) or Haiku 4.5 (~$0.35)? Any of them should read receipts well. I'd confirm against
-   your 20-receipt test set in Phase 2 either way.
+4. ~~Model~~ — decided: Haiku 4.5, with Sonnet 5 as a one-setting fallback if the Phase 2
+   test set shows misreads.
 
 Non-blocking, needed by Phase 4: the adult roster (name, mobile, email), the current trip list,
 and the troop number/treasurer contact for the reply copy.
