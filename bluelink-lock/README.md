@@ -48,8 +48,9 @@ All `flyctl` commands need Fly auth (`~/.fly/bin/flyctl`, token in `~/.fly/confi
 
 ## Security TODO (outstanding as of 2026-08-31)
 
-- **Fly org deploy token** `APJqJeOaDBVgOH3KYjRMemYvLQHMZ5l31Vj56Q5iBK` (expires 2046) was pasted into a chat transcript. Revoke at https://fly.io/dashboard → Account → Access Tokens. App + sweep keep running without it; re-auth (`flyctl auth login` in a real terminal → `flyctl tokens org personal`) only when you next need to deploy.
+- **Fly org deploy token** (expires 2046) was previously committed to this file and pasted into a chat transcript; the value has been removed but remains in git history. Revoke it at https://fly.io/dashboard → Account → Access Tokens. App + sweep keep running without it; re-auth (`flyctl auth login` in a real terminal → `flyctl tokens org personal`) only when you next need to deploy.
 - **Bluelink password** was also in that transcript. Consider changing it; then `flyctl secrets set BLUELINK_PASSWORD='new' -a bluelink-lock`.
+- Never paste secrets into this README or chat.
 
 ## Files
 
